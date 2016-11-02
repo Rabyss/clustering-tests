@@ -6,3 +6,4 @@ scalaVersion := "2.11.8"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
 libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.10.0"
+libraryDependencies += "com.quantifind" %% "wisp" % "0.0.4"

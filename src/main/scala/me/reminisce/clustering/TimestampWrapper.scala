@@ -5,6 +5,10 @@ import org.joda.time.{DateTime, DateTimeZone}
 
 class TimestampWrapper(private val timestamp: Long) extends Clusterable {
 
+  def this(dateTime: DateTime) {
+    this(dateTime.getMillis)
+  }
+
   private val point = Array[Double](timestamp)
 
   override def getPoint: Array[Double] = point
