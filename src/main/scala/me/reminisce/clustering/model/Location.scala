@@ -1,4 +1,4 @@
-package me.reminisce.clustering
+package me.reminisce.clustering.model
 
 class Location(private val x: Double, private val y: Double) {
   def getX: Double = {

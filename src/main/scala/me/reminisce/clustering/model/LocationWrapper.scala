@@ -1,4 +1,4 @@
-package me.reminisce.clustering
+package me.reminisce.clustering.model
 
 import org.apache.commons.math3.ml.clustering.Clusterable
 
