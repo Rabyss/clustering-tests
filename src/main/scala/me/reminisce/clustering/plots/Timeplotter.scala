@@ -1,27 +1,20 @@
 package me.reminisce.clustering.plots
 
+import java.awt.{Color, Paint}
+
 import breeze.plot._
 import me.reminisce.clustering.model.TimestampWrapper
 import org.apache.commons.math3.ml.clustering.Cluster
-import java.awt.{Color, Paint}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.util.Random
 
 object Timeplotter {
 
-  private val colors: List[Paint] = List (
+  private val colors: List[Paint] = List(
     new Color(255, 0, 0, 200),
     new Color(0, 255, 0, 200),
-    new Color(0, 0, 255, 200),
-    new Color(35, 69, 82, 200),
-    new Color(249, 84, 27, 200),
-    new Color(142, 226, 170, 200),
-    new Color(173, 128, 111, 200),
-    new Color(114, 226, 41, 200),
-    new Color(29, 28, 202, 200),
-    new Color(123, 51, 132, 200)
+    new Color(0, 0, 255, 200)
   )
 
   private def findMinMax(timeClusters: List[Cluster[TimestampWrapper]]): (Long, Long) = {
@@ -45,38 +38,44 @@ object Timeplotter {
       (newMin, newMax)
   }
 
-  private def getClusterMap(timeClusters: List[Cluster[TimestampWrapper]]): Map[Long, Int] = {
+  private def getColorMap(valuesByCluster: List[(Int, TimestampWrapper)]): Map[Int, Paint] =
+    valuesByCluster.zipWithIndex.map {
+      case ((clusterNumber, timestampWrapper), index) => index -> colors(clusterNumber % colors.size)
+    }.toMap
+
+
+  private def getTips(valuesByCluster: List[(Int, TimestampWrapper)]): Map[Int, String] =
+    valuesByCluster.zipWithIndex.map {
+      case ((clusterNumber, timestampWrapper), index) =>
+        index -> s"($clusterNumber) $timestampWrapper"
+    }.toMap
+
+  private def getValuesByClusterList(timeClusters: List[Cluster[TimestampWrapper]]): List[(Int, TimestampWrapper)] =
     timeClusters.zipWithIndex.flatMap {
-      case (cluster, index) =>
+      case (cluster, clusterNumber) =>
         cluster.getPoints.asScala.map {
-          t =>
-            (t.getTimestamp, index)
+          tw =>
+            (clusterNumber, tw)
         }
-    }.toMap
-  }
+    }
 
-  private def getColorMap(timeClusters: List[Cluster[TimestampWrapper]]): Map[Int, Paint] = {
-    val clusterMap = getClusterMap(timeClusters)
-    clusterMap.values.zipWithIndex.map {
-      case (clusterNumber, index) => index -> colors(clusterNumber % colors.size)
-    }.toMap
-  }
-
-  private def getValuesList(timeClusters: List[Cluster[TimestampWrapper]]): List[Long] =
-    timeClusters.flatMap(_.getPoints.asScala.map(_.getTimestamp)).distinct
-
-  def plotCluster(timeClusters: List[Cluster[TimestampWrapper]]): Unit = {
-    val (minTime, maxTime) = findMinMax(timeClusters)
-    val f = Figure()
-    val p = f.subplot(0)
-    val values = getValuesList(timeClusters)
-    val colorMap = getColorMap(timeClusters)
-    val xLength = maxTime - minTime
-    p.xlim = (minTime.toDouble, maxTime.toDouble)
-    p += scatter(x = values, y = List.fill(values.size)(0L), _ => 0.001 * xLength, colorMap.apply)
-    p.ylabel = ""
-    p.xlabel = "Timestamps"
-    p.title = "lines plotting"
-    f.saveas("image.png")
-  }
+  def plotCluster(timeClusters: List[Cluster[TimestampWrapper]]): Unit =
+    timeClusters match {
+      case Nil =>
+        System.err.println("Empty clusters!")
+      case _ =>
+        val (minTime, maxTime) = findMinMax(timeClusters)
+        val f = Figure()
+        val p = f.subplot(0)
+        val valuesByCluster = getValuesByClusterList(timeClusters)
+        val values = valuesByCluster.unzip._2.map(_.getTimestamp)
+        val colorsMap = getColorMap(valuesByCluster)
+        val tipsMap = getTips(valuesByCluster)
+        val xLength = maxTime - minTime
+        p.xlim = (minTime.toDouble, maxTime.toDouble)
+        p += scatter(x = values, y = List.fill(values.size)(0L), _ => 0.01 * xLength, colorsMap, tips = tipsMap)
+        p.ylabel = ""
+        p.xlabel = "Timestamps"
+        p.title = "Time clusters"
+    }
 }

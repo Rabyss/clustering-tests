@@ -22,15 +22,21 @@ class TimeClusterer(filename: String, eps: Double, minPts: Int, maybeMeasure: Op
   }
 
   override def loadData = {
-    val resource = getClass.getResourceAsStream(filename)
-    val lines = Source.fromInputStream(resource).getLines
+    val maybeResource = Option(getClass.getResourceAsStream(filename))
+    maybeResource match {
+      case Some(resource) =>
+        val lines = Source.fromInputStream(resource).getLines
 
-    val timestamps =
-      lines map {
-        line =>
-          new TimestampWrapper(line.toLong)
-      }
+        val timestamps =
+          lines map {
+            line =>
+              new TimestampWrapper(line.toLong)
+          }
 
-    timestamps.toIterable.asJavaCollection
+        timestamps.toIterable.asJavaCollection
+      case None =>
+        System.err.println("File not found.")
+        Iterable().asJavaCollection
+    }
   }
 }
